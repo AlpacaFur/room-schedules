@@ -1,5 +1,10 @@
 import React from "react";
-import {useState, useRef, useEffect, forwardRef} from "react";
+import {useState, useRef, useEffect} from "react";
+
+const START_OF_DAY = 24000; // 06:40
+const END_OF_DAY = 80400; // 22:20
+const EFFECTIVE_DAY_LENGTH = END_OF_DAY - START_OF_DAY;
+const HOUR_MARKER_RANGE = range(7,22)
 
 function range(start, end) {
   return {
@@ -21,10 +26,6 @@ function secondsToTime(seconds) {
 	return `${hours}:${minutes}`
 }
 
-const START_OF_DAY = 24000; // 06:40
-const END_OF_DAY = 80400; // 22:20
-const EFFECTIVE_DAY_LENGTH = END_OF_DAY - START_OF_DAY;
-
 function timeToSeconds(hours, minutes) {
 	return 3600*hours + 60*minutes
 }
@@ -40,7 +41,7 @@ function timeToHeight(timeInSeconds) {
 
 function Class(props) {
 	return <div style={{height: props.height, top:props.pos}} className="class" onClick={()=>{
-		window.open(`https://searchneu.com/NEU/202310/search/${props.subject + props.classId}`)
+		window.open(`https://searchneu.com/NEU/202310/classPage/${props.subject}/${props.classId}`)
 	}}>
 		<p className="class-time">{
 				secondsToTime(props.start) + "-" + secondsToTime(props.end)
@@ -55,8 +56,13 @@ function Class(props) {
 }
 
 function DayContent(props) {
+	let timeMarker = null
+	if (props.timeMarker !== false) {
+		timeMarker = <div className="time-marker"
+		style={{top: timeToPercent(props.timeMarker*60)}}></div>
+	}
 	return (<div className="cont">
-			{range(7, 22).map((hour)=>{
+			{HOUR_MARKER_RANGE.map((hour)=>{
 				let position = timeToPercent(timeToSeconds(hour, 0))
 				return <div key={"line"+hour} className="hour-line" style={{top: position}}></div>
 			})}
@@ -74,33 +80,39 @@ function DayContent(props) {
 								 key={time.subject + time.classId + "-" + index}
 								 />
 			})}
+			{timeMarker}
 		</div>)
 }
 
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
 function Day(props) {
 	return <div className="day">
-		<DayContent times={props.times}/>
+		<DayContent times={props.times} timeMarker={props.timeMarker}/>
 	</div>
 }
 
-// 		<p className="day-name">{DAYS[props.day-1]}</p>
-
-
-
-const DayLabels = forwardRef((props, ref)=> {
-	let dayLabels = range(1,7).map((day)=>{
-		return <p key={day} className="day-name" style={{display: props.scroll}}>{DAYS[day-1]}</p>
+function DayLabels(props) {
+	const contRef = useRef(null)
+	let dayLabels = range(0,6).map((day)=>{
+		// Shift to make Monday come first.
+		let shifted = (day + 1) % 7
+		return <p key={shifted} className="day-name" style={{display: props.scroll}}>{DAYS[shifted]}</p>
 	})
-	let elem = <div ref={ref} className="day-labels">
+
+	useEffect(()=>{
+		contRef.current.scrollLeft = props.scroll
+	}, [props.scroll])
+
+	let elem = <div ref={contRef} className="day-labels">
 		{dayLabels}
 	 </div>
 	return elem;
-})
+}
 
 export default function Room(props) {
-	const scrollSourceRef = useRef(null)
-	const scrollRef = useRef(null)
+	const [scrollLeft, setScrollLeft] = useState(0)
+	const [currentTime, setCurrentTime] = useState(0)
+	const [dayOfTheWeek, setDayOfTheWeek] = useState(0)
   const [room, setRoom] = useState({"0":[], "1":[], "2":[], "3":[], "4":[], 5:[], 6:[]})
 
   useEffect(()=>{
@@ -112,20 +124,38 @@ export default function Room(props) {
 		}
   }, [props.room])
 
-	// let name = props.room.name
-	// let daysAndTimes = sortedDaysAndTimes(schedule)
+	function updateTime() {
+		let now = new Date()
+		setCurrentTime(now.getHours()*60 + now.getMinutes())
+		setDayOfTheWeek(now.getDay())
+	}
+
+	useEffect(()=>{
+		updateTime()
+		let interval = setInterval(()=>{
+			updateTime()
+		}, 60*1000)
+		return ()=>{
+			clearInterval(interval)
+		}
+	})
+
 	let days = range(0,6).map((day)=>{
-		return <Day day={day} times={room[day]} key={day} />
+		// Shift to make Monday come first.
+		let shifted = (day + 1) % 7
+		return (
+			<Day 
+				day={shifted} 
+				times={room[shifted]} 
+				key={shifted}
+				timeMarker={shifted === dayOfTheWeek ? currentTime : false}
+			/>
+		)
 	})
 	
-	let times = range(7,22).map((hour)=>{
+	let times = HOUR_MARKER_RANGE.map((hour)=>{
 		return <p key={hour} style={{top: timeToPercent(timeToSeconds(hour, 0))}}>{hour}:00</p>
 	})
-	
-	function handleScroll() {
-		// console.log(scrollSourceRef)
-		scrollRef.current.scrollLeft = scrollSourceRef.current.scrollLeft
-	}
 	
 	return <div className="room" style={{display: props.hidden ? "none" : ""}}>
 		<div className="room-header">
@@ -134,7 +164,7 @@ export default function Room(props) {
 		</div>
 		<div className="schedule-labels">
 			<p>Time</p>
-			<DayLabels ref={scrollRef}/>
+			<DayLabels scroll={scrollLeft}/>
 		</div>
 		<div className="schedule-and-sidebar">
 			<div className="schedule-times">
@@ -142,7 +172,7 @@ export default function Room(props) {
 					{times}
 				</div>
 			</div>
-			<div className="schedule" ref={scrollSourceRef} onScroll={handleScroll}>
+			<div className="schedule" onScroll={(event)=>setScrollLeft(event.target.scrollLeft)}>
 				{days}
 			</div>
 		</div>

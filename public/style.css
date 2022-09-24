@@ -2,13 +2,96 @@ body {
 	font-family: "Inter", sans-serif;
 	--accent: #3333ff;
 	--bg-light: #f0f0f9;
+	--bg-med-light: #e0e0f2;
 	--bg-medium: #cccce5;
 	--bg-dim: #aaaac5;
 	--bg-dark: #8888a5;
+	--bg-darker: #4b6493;
 	--text-dark: #223;
 	background: var(--bg-light);
 	margin: 0px;
 	height: 100vh;
+}
+
+.rooms-container {
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+}
+
+.rooms-header {
+	display: flex;
+	align-items: center;
+	margin-top: 10px;
+	margin-bottom: 20px;
+}
+
+.rooms-header>h1 {
+	margin: 0px;
+	background: var(--accent);
+	color: white;
+	padding: 10px;
+	border-radius: 5px;
+	margin-right: 10px;
+	font-size: 20px;
+	cursor: pointer;
+	user-select: none;
+	transition: transform 0.15s ease;
+}
+.rooms-header>h1:hover {
+	transform: scale(1.04);
+}
+
+@media (max-width: 500px) {
+	.rooms-header {
+		flex-direction: column;
+		align-items: flex-start;
+	}
+	.rooms-header>h1 {
+		margin-bottom: 10px;
+	}
+}
+
+.search-container {
+	position: relative;
+	display: flex;
+	align-items: center;
+	flex-grow: 1;
+	max-width: 500px;
+	width: 100%;
+}
+.search-container>svg {
+	width: 30px;
+	height: 30px;
+	position: absolute;
+	left: 10px;
+	fill: var(--accent);
+}
+
+.search-no-results {
+	background: var(--bg-med-light);
+	flex-grow: 1;
+	padding: 20px 40px;
+	font-size: 20px;
+	font-weight: bold;
+	border-radius: 5px;
+}
+
+.rooms-header input {
+	background: var(--bg-medium);
+	border: 0px;
+	padding: 10px 10px 10px 50px;
+	font-family: "Inter", sans-serif;
+	font-size: 20px;
+	font-weight: bold;
+	border-radius: 5px;
+	color: var(--text-dark);
+	flex-grow: 1;
+	width: 100%;
+}
+
+input::placeholder {
+	color: var(--bg-dark);
 }
 
 .rooms-list {
@@ -18,12 +101,21 @@ body {
 	overflow-y: auto;
 	height: 100%;
 }
-/* .rooms-list>p {
-	background: var(--bg-medium);
+
+.location-section {
+	background: var(--bg-med-light);
 	padding: 10px;
 	border-radius: 5px;
-	margin-right: 10px;
-} */
+	flex-grow: 1;
+	/* max-width: 500px; */
+}
+.location-title {
+	font-size: 20px;
+	color: var(--accent);
+}
+.location-rooms>button {
+	margin: 0px 5px 5px 0px;
+}
 
 #root {
 	overflow: hidden;
@@ -41,7 +133,7 @@ button {
 	cursor: pointer;
 	transition: background 0.25s ease, color 0.25s ease;
 	font-family: "Inter", sans-serif;
-	/* font-weight: bold; */
+	flex-shrink: 0;
 	color: var(--text-dark);
 }
 button:hover {
@@ -61,10 +153,23 @@ button:active {
 	display: flex;
 	align-items: center;
 }
+
 .room-name {
 	color: var(--accent);
 	margin-left: 15px;
 	/* font-size: 30px; */
+}
+
+@media (max-width: 500px) {
+	.room-header {
+		flex-direction: column;
+		align-items: flex-start;
+		margin-top: 20px;
+	}
+	.room-name {
+		margin: 15px 0px;
+		font-size: 24px;
+	}
 }
 
 .schedule-and-sidebar {
@@ -104,7 +209,7 @@ button:active {
 	margin: 0px;
 	padding: 10px 0px;
 	margin-right: 10px;
-	min-width: 120px;
+	min-width: 125px;
 	background: var(--accent);
 	border-radius: 5px 5px 0px 0px;
 	box-shadow: 0px 1px 10px 0px #00000055;
@@ -112,19 +217,19 @@ button:active {
 	width: 100%;
 }
 .day-name:first-child {
-	margin-left: 15px;
+	margin-left: 20px;
 }
 .schedule-labels>p {
-	margin: 0px -5px 0px 0px;
+	margin: 0px;
 	padding: 10px 5px;
 	font-weight: bold;
-	background: var(--bg-dark);
+	background: var(--bg-darker);
 	color: white;
 	border-radius: 5px 5px 0px 0px;
 	text-align: center;
 	width: 60px;
 	box-sizing: border-box;
-	/* margin-right: 10px; */
+	margin-right: -10px;
 	flex-shrink: 0;
 	box-shadow: 1px 0px 10px 0px #00000055;
 	z-index: 2;
@@ -165,7 +270,7 @@ button:active {
 
 .day {
 	width: 100%;
-	min-width: 120px;
+	min-width: 125px;
 	height: 900px;
 	display: flex;
 	flex-direction: column;
@@ -192,6 +297,23 @@ button:active {
 	border-top: 1px solid var(--bg-dark);
 	width: 100%;
 	position: absolute;
+}
+.time-marker {
+	border-top: 3px solid var(--accent);
+	width: 100%;
+	position: absolute;
+}
+.time-marker::before {
+	content:"";
+	width: 0px;
+	height: 0px;
+	/* background: green; */
+	position: absolute;
+	left: 0px;
+	top: -11px;
+	border: 10px solid transparent;
+	border-left-color: var(--accent); 
+	border-radius: 5px;
 }
 .class {
 	position: absolute;
