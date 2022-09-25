@@ -159,7 +159,7 @@ export default function Room(props) {
 	
 	return <div className="room" style={{display: props.hidden ? "none" : ""}}>
 		<div className="room-header">
-			<button onClick={props.onBack}>← Back</button>
+			<button onClick={props.onBack}>←<span className="back-word"> Back</span></button>
 			<h1 className="room-name">{props.room}</h1>
 		</div>
 		<div className="schedule-labels">

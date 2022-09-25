@@ -178,14 +178,12 @@ button:active {
 }
 
 @media (max-width: 500px) {
-	.room-header {
-		flex-direction: column;
-		align-items: flex-start;
-		margin-top: 20px;
-	}
 	.room-name {
-		margin: 15px 0px;
-		font-size: 24px;
+		margin: 0px 0px 0px 10px;
+		font-size: 20px;
+	}
+	.room-header {
+		margin: 5px 0px 10px 0px;
 	}
 }
 
@@ -251,6 +249,18 @@ button:active {
 	box-shadow: 1px 0px 10px 0px #00000055;
 	z-index: 2;
 }
+
+@media (max-width: 500px) {
+	.schedule-times {
+		width: 50px;
+		font-size: 14px;
+	}
+	.schedule-labels>p {
+		font-size: 14px;
+		width: 50px;
+	}
+}
+
 .schedule-times>div {
 	flex-grow: 1;
 	background: var(--bg-medium);
@@ -374,4 +384,10 @@ button:active {
 .classId {
 	overflow: hidden;
 	flex-shrink: 100;
+}
+
+@media (max-width: 500px) {
+	.back-word {
+		display: none;
+	}
 }
