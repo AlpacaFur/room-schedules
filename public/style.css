@@ -37,6 +37,7 @@ body {
 	cursor: pointer;
 	user-select: none;
 	transition: transform 0.15s ease;
+	flex-shrink: 0;
 }
 .rooms-header>h1:hover {
 	transform: scale(1.04);
