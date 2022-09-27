@@ -23,11 +23,25 @@ body {
 	--bg-dim: #aaaac5;
 	--bg-dark: #8888a5;
 	--bg-darker: #4b6493;
-	--text-dark: #223;
+	--text: #223;
+	color: var(--text);
 	background: var(--bg-light);
 	margin: 0px;
 	height: 100vh;
 	overscroll-behavior-y: none;
+}
+
+@media (prefers-color-scheme: dark) {
+	body {
+		--accent: #2b4bce;
+    --bg-light: #161617;
+    --bg-med-light: #1a1a23;
+    --bg-medium: #272738;
+    --bg-dim: #303053;
+    --bg-dark: #53537a;
+    --bg-darker: #5d67c6;
+    --text: #c4c4ff;
+	}
 }
 
 .rooms-container {
@@ -103,7 +117,7 @@ body {
 	font-size: 20px;
 	font-weight: bold;
 	border-radius: 5px;
-	color: var(--text-dark);
+	color: var(--text);
 	flex-grow: 1;
 	width: 100%;
 }
@@ -152,7 +166,7 @@ button {
 	transition: background 0.25s ease, color 0.25s ease;
 	font-family: "Inter", sans-serif;
 	flex-shrink: 0;
-	color: var(--text-dark);
+	color: var(--text);
 }
 button:hover {
 	background: var(--bg-dim);
@@ -278,7 +292,7 @@ button:active {
 	position: absolute;
 	margin-top: -10px;
 	margin-right: 5px;
-	color: var(--text-dark);
+	color: var(--text);
 }
 .schedule {
 	display: flex;
@@ -348,7 +362,7 @@ button:active {
 	box-sizing: border-box;
 	width: calc(100% - 20px);
 	height: 30px;
-	background: white;
+	background: var(--bg-light);
 	border-radius: 3px;
 	display: flex;
 	flex-direction: column;
@@ -364,11 +378,11 @@ button:active {
 }
 .class>p {
 	margin: 0px;
-	/* color: var(--accent); */
+	color: var(--text);
 	font-size: 14px;
 }
 
-.class-time {
+.class>.class-time {
 	font-weight:bold;
 	color: var(--accent);
 	/* margin-left: 100px; */
