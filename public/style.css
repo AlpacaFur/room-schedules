@@ -28,6 +28,7 @@ body {
 	margin: 0px;
 	height: 100vh;
 	overscroll-behavior-y: none;
+	position: fixed;
 }
 
 .rooms-container {
