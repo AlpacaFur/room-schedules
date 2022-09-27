@@ -13,5 +13,22 @@
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      const themeColors = {light: "#F0F0F9", dark: "#161617"}
+      const meta = document.querySelector("meta[name=theme-color]")
+      const isDarkMode = window.matchMedia("(prefers-color-scheme: dark)")
+      function switchTheme(isDarkMode) {
+        if (isDarkMode) {
+          meta.setAttribute("content", themeColors.dark)
+        } else {
+          meta.setAttribute("content", themeColors.light)
+        }
+      }
+
+      switchTheme(isDarkMode.matches)
+      isDarkMode.addEventListener("change", (e)=>{
+        switchTheme(isDarkMode.matches)
+      })
+    </script>
   </body>
 </html>
