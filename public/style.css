@@ -27,6 +27,7 @@ body {
 	background: var(--bg-light);
 	margin: 0px;
 	height: 100vh;
+	overscroll-behavior-y: none;
 }
 
 .rooms-container {
