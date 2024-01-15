@@ -1,5 +1,6 @@
 import React from "react";
 import {useState, useRef, useEffect} from "react";
+import { CURRENT_SEMESTER_CODE } from "./constants"
 
 const START_OF_DAY = 24000; // 06:40
 const END_OF_DAY = 80400; // 22:20
@@ -41,7 +42,7 @@ function timeToHeight(timeInSeconds) {
 
 function Class(props) {
 	return <div style={{height: props.height, top:props.pos}} className="class" onClick={()=>{
-		window.open(`https://searchneu.com/NEU/202310/classPage/${props.subject}/${props.classId}`)
+		window.open(`https://searchneu.com/NEU/${CURRENT_SEMESTER_CODE}/classPage/${props.subject}/${props.classId}`)
 	}}>
 		<p className="class-time">{
 				secondsToTime(props.start) + "-" + secondsToTime(props.end)

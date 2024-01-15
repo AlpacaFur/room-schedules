@@ -1,0 +1,1 @@
+export const CURRENT_SEMESTER_CODE = "202430"
