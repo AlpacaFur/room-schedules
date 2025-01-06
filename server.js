@@ -5,7 +5,7 @@ const fs = require("fs")
 const { createProxyMiddleware } = require("http-proxy-middleware");
 const server = express()
 
-const rooms = JSON.parse(fs.readFileSync("fall24-revised.json"))
+const rooms = JSON.parse(fs.readFileSync("spring25.json"))
 const room_names = Object.keys(rooms)
 const ROOMS_JSON = {}
 room_names.forEach((name)=>{
