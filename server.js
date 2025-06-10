@@ -5,10 +5,10 @@ const fs = require("fs")
 const { createProxyMiddleware } = require("http-proxy-middleware");
 const server = express()
 
-const rooms = JSON.parse(fs.readFileSync("spring25.json"))
+const rooms = JSON.parse(fs.readFileSync("summer1-25.json"))
 const room_names = Object.keys(rooms)
 const ROOMS_JSON = {}
-room_names.forEach((name)=>{
+room_names.forEach((name) => {
   ROOMS_JSON[name] = JSON.stringify(rooms[name])
 })
 const ROOM_NAMES_JSON = JSON.stringify(room_names.sort())
@@ -21,12 +21,12 @@ const proxy = createProxyMiddleware({
 });
 
 
-server.get("/api/rooms", (req, res)=>{
+server.get("/api/rooms", (req, res) => {
   res.type("json")
   res.status(200).send(ROOM_NAMES_JSON)
 })
 
-server.get("/api/room/:name", (req, res)=>{
+server.get("/api/room/:name", (req, res) => {
   if (ROOMS_JSON[req.params.name] !== undefined) {
     res.type("json")
     res.status(200).send(ROOMS_JSON[req.params.name])
@@ -37,6 +37,6 @@ server.get("/api/room/:name", (req, res)=>{
 
 server.use("/", proxy)
 
-server.listen(PORT, ()=>{
+server.listen(PORT, () => {
   console.log(`Proxy is running on port ${PORT}!`)
 })
