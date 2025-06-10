@@ -1,9 +1,9 @@
 import React from "react";
-import {useState} from "react";
+import { useState } from "react";
 import Room from "./Room"
 import Rooms from "./Rooms"
 
-export default function Main() {	
+export default function Main() {
 	let [currentRoom, setCurrentRoom] = useState(null)
 
 	// let content = <Rooms onRoom={(room)=>{
@@ -14,19 +14,19 @@ export default function Main() {
 	// 		setCurrentRoom(null)
 	// 	}}/>
 	// }
-	
+
 
 	return <React.StrictMode>
-		<Rooms 
-			hidden={currentRoom !== null} 
-			onRoom={(room)=>{
+		<Rooms
+			hidden={currentRoom !== null}
+			onRoom={(room) => {
 				setCurrentRoom(room)
-			}} 
+			}}
 		/>
-		<Room 
-			hidden={currentRoom === null} 
-			room={currentRoom} 
-			onBack={()=>{
+		<Room
+			hidden={currentRoom === null}
+			room={currentRoom}
+			onBack={() => {
 				setCurrentRoom(null)
 			}}
 		/>
