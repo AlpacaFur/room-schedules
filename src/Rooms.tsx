@@ -101,6 +101,7 @@ export function Rooms({ rooms, hidden, onRoom }: RoomsProps) {
           <input
             type="text"
             value={search}
+            autoFocus={true}
             onChange={(event) => {
               setSearch(event.target.value)
             }}
