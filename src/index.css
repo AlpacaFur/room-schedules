@@ -379,6 +379,7 @@ button:active,
   transition: transform 0.25s ease;
   cursor: pointer;
   box-shadow: 0px 0px 5px 0px #00000022;
+	text-decoration: none;
 }
 .class:hover {
   transform: scale(1.04);

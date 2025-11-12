@@ -40,21 +40,17 @@ interface ClassProps {
 
 function Class(props: ClassProps) {
   return (
-    <div
+    <a
       style={{ height: props.height, top: props.pos }}
       className="class"
-      onClick={() => {
-        window.open(
-          `https://searchneu.com/NEU/${CURRENT_SEMESTER_CODE}/classPage/${props.subject}/${props.classId}`
-        )
-      }}
+			href={`https://searchneu.com/catalog/${CURRENT_SEMESTER_CODE}/${props.subject} ${props.classId}`}
     >
       <p className="class-time">
         {secondsToTime(props.start) + "-" + secondsToTime(props.end)}
       </p>
       <p className="className">{props.name}</p>
       <p className="classId">{props.subject + props.classId}</p>
-    </div>
+    </a>
   )
 }
 
