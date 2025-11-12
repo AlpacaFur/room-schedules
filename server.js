@@ -1,11 +1,12 @@
-const PORT = 9000
+import express from 'express'
+import fs from 'fs'
+import { createProxyMiddleware } from 'http-proxy-middleware'
 
-const express = require("express")
-const fs = require("fs")
-const { createProxyMiddleware } = require("http-proxy-middleware");
+
+const PORT = 9000
 const server = express()
 
-const rooms = JSON.parse(fs.readFileSync("fall25.json"))
+const rooms = JSON.parse(fs.readFileSync("./room-data/fall25.json"))
 const room_names = Object.keys(rooms)
 const ROOMS_JSON = {}
 room_names.forEach((name) => {
@@ -15,7 +16,7 @@ const ROOM_NAMES_JSON = JSON.stringify(room_names.sort())
 console.log(`Loaded ${room_names.length} rooms!`)
 
 const proxy = createProxyMiddleware({
-  target: "http://localhost:8080",
+  target: "http://localhost:5173",
   ws: true,
   logLevel: "warn",
 });
