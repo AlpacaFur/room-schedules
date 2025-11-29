@@ -36,10 +36,10 @@ body {
 
 @media (prefers-color-scheme: dark) {
   body {
-    --accent: #2b4bce;
+    --accent: #466bff;
     --bg-light: #161617;
-    --bg-med-light: #1a1a23;
-    --bg-medium: #272738;
+    --bg-med-light: #222239;
+    --bg-medium: #3a3a60;
     --bg-dim: #303053;
     --bg-dark: #53537a;
     --bg-darker: #5d67c6;
@@ -379,7 +379,7 @@ button:active,
   transition: transform 0.25s ease;
   cursor: pointer;
   box-shadow: 0px 0px 5px 0px #00000022;
-	text-decoration: none;
+  text-decoration: none;
 }
 .class:hover {
   transform: scale(1.04);
@@ -414,4 +414,9 @@ button:active,
   .back-word {
     display: none;
   }
+}
+
+.filter-bar {
+  display: flex;
+  gap: 5px;
 }

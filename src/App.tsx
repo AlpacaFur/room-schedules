@@ -2,6 +2,7 @@ import React, { useCallback, useEffect } from "react"
 import { useState } from "react"
 import { Rooms } from "./Rooms"
 import { Room } from "./Room"
+import { FreeRooms } from "./pages/free-rooms/FreeRooms"
 
 export function App() {
   const [rooms, setRooms] = useState<string[]>([])
@@ -61,7 +62,8 @@ export function App() {
 
   return (
     <React.StrictMode>
-      <Rooms
+			<FreeRooms />
+      {/* <Rooms
         hidden={currentRoom !== null}
         onRoom={(room) => {
           navigate(room)
@@ -74,7 +76,7 @@ export function App() {
         onBack={() => {
           navigate(null)
         }}
-      />
+      /> */}
     </React.StrictMode>
   )
 }
