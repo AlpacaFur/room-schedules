@@ -54,7 +54,12 @@ server.get("/api/room/:name", (req, res) => {
   }
 })
 
-type RoomStatus = Free | Busy
+type NamedRoomStatus = RoomStatus & {
+  building: string
+  room: string
+}
+
+type RoomStatus = Free | Busy | BusyUntilTmrw
 
 type Time = number
 type FutureTime = number | "tmrw"
@@ -67,78 +72,158 @@ interface Free {
 
 interface Busy {
   status: "busy"
-  freeat: Time
+  freeAt: Time
   until: FutureTime
 }
 
-function determineState(
-  previousClass,
-  nowSecs,
-  currentClass,
-  currentClassBlobEnd,
-  nextFreestandingClass
-) {
-  if (currentClassBlobEnd > nowSecs) {
-    return {
-      state: "busy",
-      // substate: (currentClass && currentClass.end ===) currentClassBlobEnd ? "current-only" : () ?
-      until: currentClassBlobEnd,
-      thenFreeUntil: nextFreestandingClass?.start ?? "tmrw",
-      currentClassName: currentClass?.name,
+interface BusyUntilTmrw {
+  status: "busyUntilTmrw"
+}
+
+const MINIMUM_SEC_GAP = 20 * 60
+const SECS_PER_DAY = 60 * 60 * 24
+
+function checkIfBusy(
+  timeSecs: number,
+  currentClass: Class | undefined,
+  nextClass: Class | undefined
+): boolean {
+  const noTimeLeftInDay = timeSecs + MINIMUM_SEC_GAP >= SECS_PER_DAY
+  return (
+    noTimeLeftInDay ||
+    !!currentClass ||
+    (!!nextClass && nextClass.start <= timeSecs + MINIMUM_SEC_GAP)
+  )
+}
+
+function assertImpossible(message: string): never {
+  throw new Error(message)
+}
+
+function analyzeBusyStatus(
+  timeSecs: number,
+  currentClass: Class | undefined,
+  nextClass: Class | undefined,
+  dayClasses: Class[]
+): Busy | BusyUntilTmrw {
+  const currentOrNextClass = currentClass ?? nextClass
+
+  if (!currentOrNextClass) {
+    if (timeSecs + MINIMUM_SEC_GAP < SECS_PER_DAY) {
+      return assertImpossible(
+        "Busy but no future classes and time left in day."
+      )
     }
+    return { status: "busyUntilTmrw" }
+  }
+
+  const currentOrNextIndex = dayClasses.indexOf(currentOrNextClass)
+  let nextFreeTime = currentOrNextClass.end
+  let latestClassInfo = currentOrNextClass
+  let classIndex = currentOrNextIndex + 1
+
+  for (; classIndex < dayClasses.length; classIndex += 1) {
+    const classInfo = dayClasses[classIndex]
+    if (nextFreeTime + MINIMUM_SEC_GAP < classInfo.start) break
+    latestClassInfo = classInfo
+    nextFreeTime = latestClassInfo.end
+  }
+
+  if (nextFreeTime + MINIMUM_SEC_GAP >= SECS_PER_DAY)
+    return { status: "busyUntilTmrw" }
+
+  return {
+    status: "busy",
+    freeAt: nextFreeTime,
+    until: dayClasses[classIndex]?.start ?? "tmrw",
+  }
+}
+
+function analyzeRoomStatus(timeSecs: number, dayClasses: Class[]): RoomStatus {
+  const currentClass = dayClasses.find(
+    (classInfo) => classInfo.start <= timeSecs && classInfo.end >= timeSecs
+  )
+  const nextClass = dayClasses.find((classInfo) => classInfo.start > timeSecs)
+
+  const isBusy = checkIfBusy(timeSecs, currentClass, nextClass)
+
+  if (isBusy) {
+    return analyzeBusyStatus(timeSecs, currentClass, nextClass, dayClasses)
   } else {
+    const prevClass = dayClasses.findLast(
+      (classInfo) => classInfo.end < timeSecs
+    )
+
     return {
-      state: "free",
+      status: "free",
+      since: prevClass?.end ?? 0,
+      until: nextClass?.start ?? "tmrw",
     }
   }
 }
 
-const MINIMUM_SEC_GAP = 20 * 60
+function clusterByBuilding(analyzed: NamedRoomStatus[]): Building[] {
+  const res = Object.groupBy(analyzed, (room) => room.building) as Record<
+    string,
+    NamedRoomStatus[]
+  >
+  return Object.entries(res).map(([building, rooms]) => ({
+    name: building,
+    rooms,
+  }))
+}
+
+function orderBuildings(
+  originBuilding: string,
+  unsortedBuildings: Building[]
+): Building[] {
+  // TODO: actually sort based on lat/long
+  return [
+    unsortedBuildings.find((building) => building.name === originBuilding)!,
+    ...unsortedBuildings.filter((building) => building.name !== originBuilding),
+  ]
+}
+
+interface Building {
+  name: string
+  rooms: RoomStatus[]
+}
+
+function rankWithinBuilding(building: Building) {
+  return building
+}
 
 server.get("/api/free", (req, res) => {
   const now = new Date(1763582400 * 1000)
   const nowSecs = (now.getHours() * 60 + now.getMinutes()) * 60
 
-  const dayOfTheWeek = new Date().getDay()
+  const origin = "Cargill Hall 094"
+  const originBuilding = origin.match(/(.+) (.+)/)![1]
+
+  const dayOfTheWeek = new Date().getDay() as keyof RoomAvailability
 
   const roomEntries = Object.entries(rooms)
-  const analyzed = roomEntries.map(([name, times]) => {
+  const analyzed: NamedRoomStatus[] = roomEntries.map(([name, times]) => {
     const todayClasses = times[dayOfTheWeek].toSorted(
       (classA, classB) => classA.start - classB.start
     )
 
-    const currentClass = todayClasses.find(
-      (classInfo) => classInfo.start <= nowSecs && classInfo.end >= nowSecs
-    )
+    const [, building, room] = name.match(/(.+) (.+)/)!
 
-    const previousClass = todayClasses.findLast(
-      (classInfo) => classInfo.end < nowSecs
-    )
-
-    let lastEnd = Math.max(currentClass?.end ?? 0, nowSecs)
-    const nextFreestandingClass = todayClasses.find((classInfo) => {
-      if (classInfo.start <= nowSecs) {
-        return false
-      }
-      if (classInfo.start - lastEnd < MINIMUM_SEC_GAP) {
-        lastEnd = classInfo.end
-      }
-      return true
-    })
-
-    return {
-      mode: currentClass !== undefined ? "" : "",
-      name,
-      currentClass,
-      todayClasses,
-    }
+    return { building, room, ...analyzeRoomStatus(nowSecs, todayClasses) }
   })
+
+  const buildings = clusterByBuilding(analyzed)
+  const orderedBuildings = orderBuildings(originBuilding, buildings)
+
+  const closestBuildings = orderedBuildings.slice(0, 3)
+
+  const fullyRanked = closestBuildings.map(rankWithinBuilding)
+
   res.header("Content-Type", "application/json")
   res.send(
     JSON.stringify({
-      dotw: dayOfTheWeek,
-      analyzed: analyzed.slice(0, 3),
-      nowMins: nowSecs,
+      rankedBuildings: fullyRanked,
     })
   )
 })
