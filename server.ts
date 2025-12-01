@@ -163,7 +163,7 @@ function orderBuildings(
   if (originBuilding) {
     return [originBuilding, ...otherBuildings]
   }
-  return otherBuildings
+  return []
 }
 
 function freeDuration(room: NamedRoomStatus, nowSecs: number) {
