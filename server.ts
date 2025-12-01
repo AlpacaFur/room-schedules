@@ -1,17 +1,19 @@
 import express from "express"
 import fs from "fs"
 import { createProxyMiddleware } from "http-proxy-middleware"
+import {
+  type Busy,
+  type BusyUntilTmrw,
+  type RoomStatus,
+  type NamedRoomStatus,
+  type Building,
+  type Class,
+  freeRoomsRequestSchema,
+} from "./server/types.ts"
+
 
 const PORT = 9000
 const server = express()
-
-interface Class {
-  name: string
-  subject: string
-  classId: string
-  start: number
-  end: number
-}
 
 type RoomAvailability = {
   0: Class[]
@@ -37,8 +39,9 @@ console.log(`Loaded ${room_names.length} rooms!`)
 const proxy = createProxyMiddleware({
   target: "http://localhost:5173",
   ws: true,
-  logLevel: "warn",
 })
+
+server.use(express.json())
 
 server.get("/api/rooms", (req, res) => {
   res.type("json")
@@ -53,32 +56,6 @@ server.get("/api/room/:name", (req, res) => {
     res.status(404).send("No room with that name exists.")
   }
 })
-
-type NamedRoomStatus = RoomStatus & {
-  building: string
-  room: string
-}
-
-type RoomStatus = Free | Busy | BusyUntilTmrw
-
-type Time = number
-type FutureTime = number | "tmrw"
-
-interface Free {
-  status: "free"
-  since: Time
-  until: FutureTime
-}
-
-interface Busy {
-  status: "busy"
-  freeAt: Time
-  until: FutureTime
-}
-
-interface BusyUntilTmrw {
-  status: "busyUntilTmrw"
-}
 
 const MINIMUM_SEC_GAP = 20 * 60
 const SECS_PER_DAY = 60 * 60 * 24
@@ -174,33 +151,88 @@ function clusterByBuilding(analyzed: NamedRoomStatus[]): Building[] {
 }
 
 function orderBuildings(
-  originBuilding: string,
+  originBuildingName: string,
   unsortedBuildings: Building[]
 ): Building[] {
+  const originBuilding = unsortedBuildings.find((building) => building.name === originBuildingName)
+  const otherBuildings = unsortedBuildings.filter((building) => building.name !== originBuildingName)
   // TODO: actually sort based on lat/long
-  return [
-    unsortedBuildings.find((building) => building.name === originBuilding)!,
-    ...unsortedBuildings.filter((building) => building.name !== originBuilding),
-  ]
+  if (originBuilding) {
+    return [
+      originBuilding,
+      ...otherBuildings
+    ]
+  }
+  return otherBuildings
 }
 
-interface Building {
-  name: string
-  rooms: RoomStatus[]
+function freeDuration(room: NamedRoomStatus, nowSecs: number) {
+  if (room.status === "busyUntilTmrw") {
+    return 0
+  }
+  const until = room.until === "tmrw" ? SECS_PER_DAY : room.until
+
+  if (room.status === "free") {
+    return until - nowSecs
+  } else {
+    return until - room.freeAt
+  }
 }
 
-function rankWithinBuilding(building: Building) {
-  return building
+function scoreRoom(room: NamedRoomStatus, nowSecs: number) {
+  let value = 0
+  if (room.status === "free") value += 70
+  if (room.status === "busy") {
+    const waitTime = room.freeAt - nowSecs
+
+    value += Math.max(0, 50 - 50 * ((waitTime / 60) * 5))
+  }
+  value += Math.min(20, freeDuration(room, nowSecs) / (60 * 10))
+
+  return value
 }
 
-server.get("/api/free", (req, res) => {
-  const now = new Date(1763582400 * 1000)
-  const nowSecs = (now.getHours() * 60 + now.getMinutes()) * 60
+function rankWithinBuilding(
+  building: Building,
+  nowSecs: number,
+  preferRecentTurnovers: boolean = false
+) {
+  return {
+    ...building,
+    rooms: building.rooms.toSorted((roomA, roomB) => {
+      return scoreRoom(roomB, nowSecs) - scoreRoom(roomA, nowSecs)
+    }),
+  }
+}
 
-  const origin = "Cargill Hall 094"
-  const originBuilding = origin.match(/(.+) (.+)/)![1]
+server.post("/api/free", (req, res) => {
+  const parsed = freeRoomsRequestSchema.safeParse(req.body)
 
-  const dayOfTheWeek = new Date().getDay() as keyof RoomAvailability
+  if (parsed.error) {
+    res.status(400).send(`Invalid request body: ${parsed.error}`)
+    return
+  }
+
+  const { data } = parsed
+
+  // const now = new Date(1764799500 * 1000)
+  // const nowSecs = (now.getHours() * 60 + now.getMinutes()) * 60
+  const nowSecs = data.time
+  // console.log("a", nowSecs)
+
+  // const origin = "Richards Hall 140"
+  const originBuilding =
+    data.origin.type === "building"
+      ? data.origin.name
+      : data.origin.name.match(/(.+) (.+)/)![1]
+
+  // const dayOfTheWeek = new Date().getDay() as keyof RoomAvailability
+  const dayOfTheWeek = data.dayOfTheWeek
+  console.log(nowSecs)
+
+  const minimumLengthSecs = (30 * 60) as number | false
+  const maximumWait = 60 * 60
+  const preferRecentTurnovers = true
 
   const roomEntries = Object.entries(rooms)
   const analyzed: NamedRoomStatus[] = roomEntries.map(([name, times]) => {
@@ -213,19 +245,36 @@ server.get("/api/free", (req, res) => {
     return { building, room, ...analyzeRoomStatus(nowSecs, todayClasses) }
   })
 
-  const buildings = clusterByBuilding(analyzed)
+  const usableRooms = analyzed.filter((room) => {
+    if (room.status === "busyUntilTmrw") return false
+    if (minimumLengthSecs === false) return true
+    if (room.status === "free") {
+      return room.until === "tmrw" || room.until - nowSecs >= minimumLengthSecs
+    } else {
+      return (
+        room.freeAt - nowSecs < maximumWait &&
+        (room.until === "tmrw" || room.until - room.freeAt >= minimumLengthSecs)
+      )
+    }
+  })
+
+  const buildings = clusterByBuilding(usableRooms)
+  console.log(buildings.map(building => !!building))
   const orderedBuildings = orderBuildings(originBuilding, buildings)
 
   const closestBuildings = orderedBuildings.slice(0, 3)
 
-  const fullyRanked = closestBuildings.map(rankWithinBuilding)
+  console.log(closestBuildings)
+
+  const fullyRanked = closestBuildings.map((building) => {
+
+    return rankWithinBuilding(building, nowSecs, preferRecentTurnovers)
+  })
+
+  console.log(req.body)
 
   res.header("Content-Type", "application/json")
-  res.send(
-    JSON.stringify({
-      rankedBuildings: fullyRanked,
-    })
-  )
+  res.send(JSON.stringify(fullyRanked))
 })
 
 server.use("/", proxy)

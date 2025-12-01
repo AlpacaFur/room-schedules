@@ -23,9 +23,10 @@ interface RoomsProps {
   rooms: string[]
   hidden: boolean
   onRoom: (room: string | null) => void
+  onFreeBuilding: (building: string) => void
 }
 
-export function Rooms({ rooms, hidden, onRoom }: RoomsProps) {
+export function Rooms({ rooms, hidden, onRoom, onFreeBuilding }: RoomsProps) {
   const [search, setSearch] = useState("")
 
   const buildingGroups = useMemo(() => {
@@ -48,7 +49,9 @@ export function Rooms({ rooms, hidden, onRoom }: RoomsProps) {
     ([location, rooms]) => {
       return (
         <div className="location-section" key={location}>
-          <h1 className="location-title">{location}</h1>
+          <h1 className="location-title">
+            {location} <button onClick={() => onFreeBuilding(location)} className="free-rooms-button">Free Rooms</button>
+          </h1>
           <div className="location-rooms">
             {rooms.map((room) => {
               return (

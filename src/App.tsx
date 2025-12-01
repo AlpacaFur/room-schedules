@@ -4,9 +4,27 @@ import { Rooms } from "./Rooms"
 import { Room } from "./Room"
 import { FreeRooms } from "./pages/free-rooms/FreeRooms"
 
+interface Room {
+  location: "room"
+  room: string
+}
+
+export type Location =
+  | {
+      location: "home"
+    }
+  | Room
+  | {
+      location: "free"
+      type: "building" | "room"
+      name: string
+    }
+
+const HOME: Location = { location: "home" }
+
 export function App() {
   const [rooms, setRooms] = useState<string[]>([])
-  const [currentRoom, setCurrentRoom] = useState<string | null>(null)
+  const [location, setLocation] = useState<Location>(HOME)
 
   useEffect(() => {
     fetch("/api/rooms")
@@ -21,12 +39,14 @@ export function App() {
       .split("/")
     if (segments[0] === "room") {
       if (rooms.includes(segments[1])) {
-        setCurrentRoom(segments[1])
+        setLocation({ location: "room", room: segments[1] })
       } else {
         history.replaceState(null, "", "/")
       }
+    } else if (segments[0] === "free") {
+      setLocation({ location: "free", type: "building", name: segments[1] })
     } else if (segments.length === 1 && segments[0] === "") {
-      setCurrentRoom(null)
+      setLocation(HOME)
     }
   }, [rooms])
 
@@ -53,30 +73,34 @@ export function App() {
       } else {
         history.back()
       }
-      setCurrentRoom(null)
+      setLocation(HOME)
     } else {
       history.pushState(null, "", `/room/${room}`)
-      setCurrentRoom(room)
+      setLocation({ location: "room", room })
     }
   }
 
   return (
     <React.StrictMode>
-			<FreeRooms />
-      {/* <Rooms
-        hidden={currentRoom !== null}
+      <FreeRooms hidden={location.location !== "free"} location={location} />
+      <Rooms
+        hidden={location.location !== "home"}
         onRoom={(room) => {
           navigate(room)
+        }}
+        onFreeBuilding={(building) => {
+          history.pushState(null, "", `/free/${building}`)
+          setLocation({ location: "free", type: "building", name: building })
         }}
         rooms={rooms}
       />
       <Room
-        hidden={currentRoom === null}
-        room={currentRoom}
+        hidden={location.location !== "room"}
+        room={(location as Room)?.room}
         onBack={() => {
           navigate(null)
         }}
-      /> */}
+      />
     </React.StrictMode>
   )
 }

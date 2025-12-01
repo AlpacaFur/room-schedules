@@ -165,7 +165,7 @@ interface RoomData {
 
 interface RoomProps {
   hidden: boolean
-  room: string | null
+  room: string | undefined
   onBack: () => void
 }
 
@@ -185,7 +185,7 @@ export function Room(props: RoomProps) {
 
   useEffect(() => {
     setRoom({ "0": [], "1": [], "2": [], "3": [], "4": [], 5: [], 6: [] })
-    if (props.room !== null) {
+    if (props.room !== undefined) {
       fetch(`/api/room/${encodeURIComponent(props.room)}`)
         .then((res) => res.json())
         .then((res) => setRoom(res))

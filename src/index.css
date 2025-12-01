@@ -147,6 +147,9 @@ input::placeholder {
 .location-title {
   font-size: 20px;
   color: var(--accent);
+  display: flex;
+  gap: 10px;
+  align-items: center;
 }
 .location-rooms > button,
 .location-rooms > .room-link {
@@ -419,4 +422,81 @@ button:active,
 .filter-bar {
   display: flex;
   gap: 5px;
+  flex-wrap: wrap;
+}
+
+#root {
+  display: flex;
+  flex-direction: column;
+}
+
+main {
+  height: 100%;
+  overflow: auto;
+}
+
+.free-card {
+  background: #3A3A60;
+  color: #c4c4ff;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border-radius: 5px;
+}
+
+.free-card.free-now {
+  border: 2px solid #7893FF;
+}
+
+.free-card.free-soon {
+  border: 2px solid #5D6BA3;
+}
+
+.free-card.busy {
+  border: 2px solid transparent;
+  opacity: 0.8;
+}
+
+.free-card.busy-forever {
+  border: 2px solid magenta;
+  opacity: 0.8;
+}
+
+.free-card p {
+  margin: 0;
+}
+
+.free-card-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.free-card.free-now > p:first-child > b {
+  color: #a1b4ff;
+}
+.free-card.free-now > p:first-child {
+  color: #8da4ff;
+}
+
+.free-card > p:last-child {
+  font-size: 14px;
+}
+
+.free-card .dot {
+  color: #ffffff5e
+}
+
+.free-card .card-room {
+  color: white;
+  font-weight: bold;
+}
+
+.free-rooms-button {
+  padding: 3px 7px;
+  border: 2px solid #306dfd;
+  display: flex;
+  font-size: 14px;
+  height: unset;
 }
