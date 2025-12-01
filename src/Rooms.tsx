@@ -43,8 +43,6 @@ export function Rooms({ rooms, hidden, onRoom, onFreeBuilding }: RoomsProps) {
     return buildings
   }, [rooms, search])
 
-  console.log(buildingGroups)
-
   const roomSections = Array.from(buildingGroups.entries()).map(
     ([location, rooms]) => {
       return (
@@ -75,8 +73,6 @@ export function Rooms({ rooms, hidden, onRoom, onFreeBuilding }: RoomsProps) {
       )
     }
   )
-
-  console.log(roomSections)
 
   if (roomSections.length === 0) {
     roomSections.push(

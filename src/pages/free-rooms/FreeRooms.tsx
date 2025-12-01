@@ -17,10 +17,10 @@ export function FreeRooms({
 }) {
   const [time, setTime] = useState(() => {
     const now = new Date()
-    return `${now.getHours()}:${now.getMinutes().toString().padStart(2, "0")}`
+    return `${now.getHours().toString().padStart(2, "0")}:${now.getMinutes().toString().padStart(2, "0")}`
   })
 
-  const [duration, setDuration] = useState<string>("any")
+  const [minDuration, setMinDuration] = useState<number | false>(false)
 
   const [dayOfTheWeek, setDayOfTheWeek] = useState(
     () => new Date().getDay() as FreeRoomsRequest["dayOfTheWeek"]
@@ -41,31 +41,6 @@ export function FreeRooms({
       {location.location === "free" && (
         <main style={{paddingBottom: "20px"}}>
           <div className="filter-bar">
-            <input
-              type="time"
-              value={time}
-              onChange={(event) => {
-                if (event.target.value !== "") setTime(event.target.value)
-              }}
-            />
-            <select
-              value={duration.toString()}
-              onChange={(event) => {
-                setDuration(event.target.value)
-              }}
-            >
-              <option value={"any"} selected>
-                Any Duration
-              </option>
-              <option value={1800}>30m</option>
-              <option value={3600}>1h</option>
-              <option value={5400}>1h30m</option>
-              <option value={7200}>2h</option>
-              <option value={9000}>2h30m</option>
-              <option value={10800}>3h</option>
-              <option value={12600}>3h30m</option>
-              <option value={14400}>4h</option>
-            </select>
             <select
               defaultValue={dayOfTheWeek}
               onChange={(event) =>
@@ -82,17 +57,43 @@ export function FreeRooms({
               <option value={6}>Saturday</option>
               <option value={0}>Sunday</option>
             </select>
-            <div>
+            <input
+              type="time"
+              value={time}
+              onChange={(event) => {
+                if (event.target.value !== "") setTime(event.target.value)
+              }}
+            />
+            <select
+              value={minDuration.toString()}
+              onChange={(event) => {
+                setMinDuration(event.target.value === "any" ? false : Number(event.target.value))
+              }}
+            >
+              <option value={"any"}>
+                Any Duration
+              </option>
+              <option value={1800}>30m</option>
+              <option value={3600}>1h</option>
+              <option value={5400}>1h30m</option>
+              <option value={7200}>2h</option>
+              <option value={9000}>2h30m</option>
+              <option value={10800}>3h</option>
+              <option value={12600}>3h30m</option>
+              <option value={14400}>4h</option>
+            </select>
+            {/* <div>
               <label>
                 <input type="checkbox" disabled={true} />
                 Prioritize Recently Free
               </label>
-            </div>
+            </div> */}
           </div>
           <FreeRoomContent
             time={timeToSeconds(time)}
             origin={{ type: location.type, name: location.name }}
             dayOfTheWeek={dayOfTheWeek}
+            minimumDuration={minDuration}
           />
         </main>
       )}

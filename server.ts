@@ -11,7 +11,6 @@ import {
   freeRoomsRequestSchema,
 } from "./server/types.ts"
 
-
 const PORT = 9000
 const server = express()
 
@@ -26,7 +25,7 @@ type RoomAvailability = {
 }
 
 const rooms: Record<string, RoomAvailability> = JSON.parse(
-  fs.readFileSync("./room-data/fall25.json").toString()
+  fs.readFileSync("./room-data/spring26-actual.json").toString()
 )
 const room_names = Object.keys(rooms)
 const ROOMS_JSON: Record<string, string> = {}
@@ -154,14 +153,15 @@ function orderBuildings(
   originBuildingName: string,
   unsortedBuildings: Building[]
 ): Building[] {
-  const originBuilding = unsortedBuildings.find((building) => building.name === originBuildingName)
-  const otherBuildings = unsortedBuildings.filter((building) => building.name !== originBuildingName)
+  const originBuilding = unsortedBuildings.find(
+    (building) => building.name === originBuildingName
+  )
+  const otherBuildings = unsortedBuildings.filter(
+    (building) => building.name !== originBuildingName
+  )
   // TODO: actually sort based on lat/long
   if (originBuilding) {
-    return [
-      originBuilding,
-      ...otherBuildings
-    ]
+    return [originBuilding, ...otherBuildings]
   }
   return otherBuildings
 }
@@ -179,9 +179,18 @@ function freeDuration(room: NamedRoomStatus, nowSecs: number) {
   }
 }
 
-function scoreRoom(room: NamedRoomStatus, nowSecs: number) {
+function scoreRoom(
+  room: NamedRoomStatus,
+  nowSecs: number,
+  preferRecentTurnovers: boolean
+) {
   let value = 0
-  if (room.status === "free") value += 70
+  if (room.status === "free") {
+    value += 70
+    if (preferRecentTurnovers && room.since - nowSecs <= 15 * 60 * 60) {
+      value += 15
+    }
+  }
   if (room.status === "busy") {
     const waitTime = room.freeAt - nowSecs
 
@@ -200,8 +209,22 @@ function rankWithinBuilding(
   return {
     ...building,
     rooms: building.rooms.toSorted((roomA, roomB) => {
-      return scoreRoom(roomB, nowSecs) - scoreRoom(roomA, nowSecs)
+      return (
+        scoreRoom(roomB, nowSecs, preferRecentTurnovers) -
+        scoreRoom(roomA, nowSecs, preferRecentTurnovers)
+      )
     }),
+  }
+}
+
+function adjustMinimumDuration(
+  minimumDuration: number | false
+): number | false {
+  if (minimumDuration === false) return false
+  if (minimumDuration <= 30 * 60) {
+    return minimumDuration - 5 * 60
+  } else {
+    return minimumDuration - 10 * 60
   }
 }
 
@@ -214,24 +237,17 @@ server.post("/api/free", (req, res) => {
   }
 
   const { data } = parsed
-
-  // const now = new Date(1764799500 * 1000)
-  // const nowSecs = (now.getHours() * 60 + now.getMinutes()) * 60
   const nowSecs = data.time
-  // console.log("a", nowSecs)
 
-  // const origin = "Richards Hall 140"
   const originBuilding =
     data.origin.type === "building"
       ? data.origin.name
       : data.origin.name.match(/(.+) (.+)/)![1]
 
-  // const dayOfTheWeek = new Date().getDay() as keyof RoomAvailability
   const dayOfTheWeek = data.dayOfTheWeek
-  console.log(nowSecs)
 
-  const minimumLengthSecs = (30 * 60) as number | false
-  const maximumWait = 60 * 60
+  const minimumDurationSecs = adjustMinimumDuration(data.minimumDuration)
+  const maximumWait = data.maximumWait
   const preferRecentTurnovers = true
 
   const roomEntries = Object.entries(rooms)
@@ -247,31 +263,30 @@ server.post("/api/free", (req, res) => {
 
   const usableRooms = analyzed.filter((room) => {
     if (room.status === "busyUntilTmrw") return false
-    if (minimumLengthSecs === false) return true
     if (room.status === "free") {
-      return room.until === "tmrw" || room.until - nowSecs >= minimumLengthSecs
+      return (
+        minimumDurationSecs === false ||
+        room.until === "tmrw" ||
+        room.until - nowSecs >= minimumDurationSecs
+      )
     } else {
       return (
         room.freeAt - nowSecs < maximumWait &&
-        (room.until === "tmrw" || room.until - room.freeAt >= minimumLengthSecs)
+        (minimumDurationSecs === false ||
+          room.until === "tmrw" ||
+          room.until - room.freeAt >= minimumDurationSecs)
       )
     }
   })
 
   const buildings = clusterByBuilding(usableRooms)
-  console.log(buildings.map(building => !!building))
   const orderedBuildings = orderBuildings(originBuilding, buildings)
 
-  const closestBuildings = orderedBuildings.slice(0, 3)
+  const closestBuildings = orderedBuildings.slice(0, 1)
 
-  console.log(closestBuildings)
-
-  const fullyRanked = closestBuildings.map((building) => {
-
-    return rankWithinBuilding(building, nowSecs, preferRecentTurnovers)
-  })
-
-  console.log(req.body)
+  const fullyRanked = closestBuildings.map((building) =>
+    rankWithinBuilding(building, nowSecs, preferRecentTurnovers)
+  )
 
   res.header("Content-Type", "application/json")
   res.send(JSON.stringify(fullyRanked))

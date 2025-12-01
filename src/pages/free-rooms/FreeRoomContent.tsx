@@ -8,9 +8,10 @@ export const FreeRoomContent: React.FC<{
     type: "building" | "room"
     name: string
   }
-}> = ({ time, origin, dayOfTheWeek }) => {
+  minimumDuration: number | false
+}> = ({ time, origin, dayOfTheWeek, minimumDuration }) => {
   const query = useQuery<Building[]>({
-    queryKey: ["api", "free", time, dayOfTheWeek, origin.name],
+    queryKey: ["api", "free", time, dayOfTheWeek, origin.name, minimumDuration],
     staleTime: 'static',
     queryFn: () =>
       fetch("/api/free", {
@@ -19,7 +20,8 @@ export const FreeRoomContent: React.FC<{
           time,
           origin,
           dayOfTheWeek,
-          minimumDuration: false,
+          minimumDuration,
+          maximumWait: 60 * 60
         } satisfies FreeRoomsRequest),
         headers: { "content-type": "application/json" },
       }).then((res) => res.json()),
@@ -34,7 +36,7 @@ export const FreeRoomContent: React.FC<{
   return (
     <div>
       {query.data.map((building) => (
-        <FreeBuilding building={building} now={time} />
+        <FreeBuilding building={building} now={time} key={building.name} />
       ))}
     </div>
   )
@@ -49,7 +51,7 @@ export const FreeBuilding: React.FC<{ building: Building; now: number }> = ({
       <h1>{building.name}</h1>
       <div className="free-card-container">
         {building.rooms.map((room) => (
-          <Room room={room} now={now} />
+          <Room room={room} now={now} key={room.room} />
         ))}
       </div>
     </div>

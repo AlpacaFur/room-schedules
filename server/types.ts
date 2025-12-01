@@ -35,14 +35,20 @@ export interface Building {
   start: number
   end: number
 }
+
+const SECS_PER_DAY = 60 * 60 * 24
+
+const timeOrDurationSchema = z.number().min(0).max(SECS_PER_DAY)
+
 export const freeRoomsRequestSchema = z.object({
   origin: z.object({
     type: z.literal(["room", "building"]),
     name: z.string(),
   }),
-  time: z.number(),
+  time: timeOrDurationSchema,
   dayOfTheWeek: z.literal([0, 1, 2, 3, 4, 5, 6]),
-  minimumDuration: z.union([z.literal(false), z.number()]),
+  minimumDuration: z.union([z.literal(false), timeOrDurationSchema]),
+  maximumWait: timeOrDurationSchema,
 })
 export type FreeRoomsRequest = z.infer<typeof freeRoomsRequestSchema>
 
