@@ -48,7 +48,19 @@ export function Rooms({ rooms, hidden, onRoom, onFreeBuilding }: RoomsProps) {
       return (
         <div className="location-section" key={location}>
           <h1 className="location-title">
-            {location} <button onClick={() => onFreeBuilding(location)} className="free-rooms-button">Free Rooms</button>
+            {location}{" "}
+            <a
+              href={`/free/${location}`}
+              onClick={(e) => {
+                if (!e.metaKey && !e.ctrlKey) {
+                  onFreeBuilding(location)
+                  e.preventDefault()
+                }
+              }}
+              className="free-rooms-button button"
+            >
+              Free Rooms
+            </a>
           </h1>
           <div className="location-rooms">
             {rooms.map((room) => {

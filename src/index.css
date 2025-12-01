@@ -163,7 +163,8 @@ input::placeholder {
   box-sizing: border-box;
 }
 button,
-.room-link {
+.room-link,
+.button {
   display: inline-flex;
   align-items: center;
   height: 40px;
@@ -180,11 +181,13 @@ button,
   text-decoration: none;
 }
 button:hover,
-.room-link:hover {
+.room-link:hover,
+.button:hover {
   background: var(--bg-dim);
 }
 button:active,
-.room-link:active {
+.room-link:active,
+.button:active {
   background: var(--bg-dark);
   /* color: white; */
 }
