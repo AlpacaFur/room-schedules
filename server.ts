@@ -10,8 +10,8 @@ import {
   type Class,
   freeRoomsRequestSchema,
 } from "./server/types.ts"
+import { PORT, ROOM_SCHEDULE_PATH } from "./config.ts"
 
-const PORT = 9000
 const server = express()
 
 type RoomAvailability = {
@@ -25,7 +25,7 @@ type RoomAvailability = {
 }
 
 const rooms: Record<string, RoomAvailability> = JSON.parse(
-  fs.readFileSync("./room-data/spring26-actual.json").toString()
+  fs.readFileSync(ROOM_SCHEDULE_PATH).toString()
 )
 const room_names = Object.keys(rooms)
 const ROOMS_JSON: Record<string, string> = {}
