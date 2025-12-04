@@ -282,7 +282,7 @@ server.post("/api/free", (req, res) => {
   const buildings = clusterByBuilding(usableRooms)
   const orderedBuildings = orderBuildings(originBuilding, buildings)
 
-  const closestBuildings = orderedBuildings.slice(0, 1)
+  const closestBuildings = orderedBuildings
 
   const fullyRanked = closestBuildings.map((building) =>
     rankWithinBuilding(building, nowSecs, preferRecentTurnovers)
