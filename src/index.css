@@ -448,6 +448,12 @@ main {
   border-radius: 5px;
 }
 
+@media (max-width: 380px) {
+  .free-card {
+    flex: 300px;
+  }
+}
+
 .free-card.free-now {
   border: 2px solid #7893FF;
 }
@@ -502,4 +508,12 @@ main {
   display: flex;
   font-size: 14px;
   height: unset;
+}
+
+a.free-card {
+  text-decoration: none;
+}
+
+a.free-card:hover {
+  text-decoration: underline;
 }

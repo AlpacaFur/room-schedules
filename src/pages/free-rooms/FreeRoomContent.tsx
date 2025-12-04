@@ -51,7 +51,7 @@ export const FreeBuilding: React.FC<{ building: Building; now: number }> = ({
       <h1>{building.name}</h1>
       <div className="free-card-container">
         {building.rooms.map((room) => (
-          <Room room={room} now={now} key={room.room} />
+          <Room room={room} building={building.name} now={now} key={room.room} />
         ))}
       </div>
     </div>
@@ -96,38 +96,42 @@ function formatDuration(seconds: number) {
   }
 }
 
-export const Room: React.FC<{ room: NamedRoomStatus; now: number }> = ({
+export const Room: React.FC<{ room: NamedRoomStatus; building: string; now: number }> = ({
   room,
+  building,
   now,
 }) => {
+  const href = `/room/${building} ${room.room}`
   if (room.status === "busyUntilTmrw") {
     return (
-      <div className="free-card busy-forever">
+      <a className="free-card busy-forever" href={href}>
         <p>{room.room} • Busy until tmrw</p>
         <p>Busy!</p>
-      </div>
+      </a>
     )
   }
   if (room.status === "busy") {
     if (room.until === "tmrw") {
       return (
-        <div
+        <a
           className={`free-card ${
             room.freeAt - now < 10 * 60 ? "free-soon" : "busy"
           }`}
+          href={href}
         >
           <p>
             {room.room} • in <b>{formatDuration(room.freeAt - now)}</b>
           </p>
           <p>Free {formatSecondsToTime(room.freeAt)} – tmrw</p>
-        </div>
+        </a>
       )
     } else {
       return (
-        <div
+        <a
           className={`free-card ${
             room.freeAt - now < 10 * 60 ? "free-soon" : "busy"
           }`}
+          href={href}
         >
           <p>
             {room.room} • in <b>{formatDuration(room.freeAt - now)}</b> for{" "}
@@ -137,13 +141,13 @@ export const Room: React.FC<{ room: NamedRoomStatus; now: number }> = ({
             Free {formatSecondsToTime(room.freeAt)} –{" "}
             {formatSecondsToTime(room.until)}
           </p>
-        </div>
+        </a>
       )
     }
   }
 
   return (
-    <div className="free-card free-now">
+    <a className="free-card free-now" href={href}>
       <p>
         <span className="card-room">{room.room}</span>{" "}
         <span className="dot">•</span> {room.until !== "tmrw" && "for"}{" "}
@@ -154,6 +158,6 @@ export const Room: React.FC<{ room: NamedRoomStatus; now: number }> = ({
         Since {formatSecondsToTime(room.since)} (
         {formatDuration(now - room.since)} ago)
       </p>
-    </div>
+    </a>
   )
 }
