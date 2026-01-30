@@ -6,7 +6,7 @@ import { createProxyMiddleware } from 'http-proxy-middleware'
 const PORT = 9000
 const server = express()
 
-const rooms = JSON.parse(fs.readFileSync("./room-data/fall25.json"))
+const rooms = JSON.parse(fs.readFileSync("./room-data/spring26-jan12.json"))
 const room_names = Object.keys(rooms)
 const ROOMS_JSON = {}
 room_names.forEach((name) => {
