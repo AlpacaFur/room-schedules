@@ -33,9 +33,11 @@ interface ClassProps {
   pos: string
   name: string
   subject: string
-  classId: string
-  start: number
-  end: number
+  courseCode: string
+  time: {
+    start: number
+    end: number
+  }
 }
 
 function Class(props: ClassProps) {
@@ -43,13 +45,13 @@ function Class(props: ClassProps) {
     <a
       style={{ height: props.height, top: props.pos }}
       className="class"
-			href={`https://searchneu.com/catalog/${CURRENT_SEMESTER_CODE}/${props.subject} ${props.classId}`}
+      href={`https://searchneu.com/catalog/${CURRENT_SEMESTER_CODE}/${props.subject} ${props.courseCode}`}
     >
       <p className="class-time">
-        {secondsToTime(props.start) + "-" + secondsToTime(props.end)}
+        {secondsToTime(props.time.start) + "-" + secondsToTime(props.time.end)}
       </p>
       <p className="className">{props.name}</p>
-      <p className="classId">{props.subject + props.classId}</p>
+      <p className="classId">{props.subject + props.courseCode}</p>
     </a>
   )
 }
@@ -81,19 +83,18 @@ function DayContent(props: DayContentProps) {
           ></div>
         )
       })}
-      {props.times.map((time, index) => {
-        const height = timeToHeight(time.end - time.start)
-        const topPos = timeToPercent(time.start)
+      {props.times.map((event, index) => {
+        const height = timeToHeight(event.time.end - event.time.start)
+        const topPos = timeToPercent(event.time.start)
         return (
           <Class
             height={height}
             pos={topPos}
-            name={time.name}
-            subject={time.subject}
-            classId={time.classId}
-            start={time.start}
-            end={time.end}
-            key={time.subject + time.classId + "-" + index}
+            name={event.name}
+            subject={event.subject}
+            courseCode={event.courseCode}
+            time={event.time}
+            key={event.subject + event.courseCode + "-" + index}
           />
         )
       })}
@@ -158,9 +159,13 @@ function DayLabels(props: DayLabelsProps) {
 interface RoomData {
   name: string
   subject: string
-  classId: string
-  start: number
-  end: number
+  courseCode: string
+  startDate: string
+  endDate: string
+  time: {
+    start: number
+    end: number
+  }
 }
 
 interface RoomProps {
@@ -169,26 +174,36 @@ interface RoomProps {
   onBack: () => void
 }
 
+function getCurrentlyApplicableEvents(roomDays: RoomDays): RoomDays {
+  const nowTimestamp = Date.now()
+  const currentEvents = Object.entries(roomDays).map(([day, events]) => {
+    return [
+      day,
+      events.filter((event) => {
+        const start = new Date(event.startDate + " EST").getTime()
+        const end = new Date(event.endDate + " EST").getTime()
+        return start <= nowTimestamp && nowTimestamp <= end
+      }),
+    ]
+  })
+
+  return Object.fromEntries(currentEvents)
+}
+
+type RoomDays = Record<string, RoomData[]>
+
 export function Room(props: RoomProps) {
   const [scrollLeft, setScrollLeft] = useState(0)
   const [currentTime, setCurrentTime] = useState(0)
   const [dayOfTheWeek, setDayOfTheWeek] = useState(0)
-  const [room, setRoom] = useState<Record<string, RoomData[]>>({
-    "0": [],
-    "1": [],
-    "2": [],
-    "3": [],
-    "4": [],
-    5: [],
-    6: [],
-  })
+  const [room, setRoom] = useState<RoomDays>({})
 
   useEffect(() => {
-    setRoom({ "0": [], "1": [], "2": [], "3": [], "4": [], 5: [], 6: [] })
+    setRoom({})
     if (props.room !== null) {
       fetch(`/api/room/${encodeURIComponent(props.room)}`)
         .then((res) => res.json())
-        .then((res) => setRoom(res))
+        .then((res) => setRoom(getCurrentlyApplicableEvents(res)))
     }
   }, [props.room])
 
@@ -211,10 +226,11 @@ export function Room(props: RoomProps) {
   const days = range(0, 6).map((day) => {
     // Shift to make Monday come first.
     const shifted = (day + 1) % 7
+    const dayName = DAYS[day].toLowerCase()
     return (
       <Day
         day={shifted}
-        times={room[shifted.toString()]}
+        times={room[dayName] ?? []}
         key={shifted}
         timeMarker={shifted === dayOfTheWeek ? currentTime : false}
       />
