@@ -104,19 +104,18 @@ function DayContent(props: DayContentProps) {
 }
 
 interface DayProps {
-  day: number
   times: RoomData[]
   timeMarker: number | false
 }
 
 const DAYS = [
-  "Sunday",
-  "Monday",
-  "Tuesday",
-  "Wednesday",
-  "Thursday",
-  "Friday",
-  "Saturday",
+  "monday",
+  "tuesday",
+  "wednesday",
+  "thursday",
+  "friday",
+  "saturday",
+  "sunday",
 ]
 function Day(props: DayProps) {
   return (
@@ -132,12 +131,10 @@ interface DayLabelsProps {
 
 function DayLabels(props: DayLabelsProps) {
   const contRef = useRef<HTMLDivElement>(null)
-  const dayLabels = range(0, 6).map((day) => {
-    // Shift to make Monday come first.
-    const shifted = (day + 1) % 7
+  const dayLabels = DAYS.map((day) => {
     return (
-      <p key={shifted} className="day-name">
-        {DAYS[shifted]}
+      <p key={day} className="day-name">
+        {day.slice(0, 1).toUpperCase() + day.slice(1)}
       </p>
     )
   })
@@ -195,7 +192,6 @@ type RoomDays = Record<string, RoomData[]>
 export function Room(props: RoomProps) {
   const [scrollLeft, setScrollLeft] = useState(0)
   const [currentTime, setCurrentTime] = useState(0)
-  const [dayOfTheWeek, setDayOfTheWeek] = useState(0)
   const [room, setRoom] = useState<RoomDays>({})
 
   useEffect(() => {
@@ -210,7 +206,6 @@ export function Room(props: RoomProps) {
   function updateTime() {
     const now = new Date()
     setCurrentTime(now.getHours() * 60 + now.getMinutes())
-    setDayOfTheWeek(now.getDay())
   }
 
   useEffect(() => {
@@ -223,16 +218,13 @@ export function Room(props: RoomProps) {
     }
   })
 
-  const days = range(0, 6).map((day) => {
-    // Shift to make Monday come first.
-    const shifted = (day + 1) % 7
-    const dayName = DAYS[day].toLowerCase()
+  const dayOfTheWeek = DAYS[(new Date().getDay() - 1 + 7) % 7].toLowerCase()
+  const days = DAYS.map((day) => {
     return (
       <Day
-        day={shifted}
-        times={room[dayName] ?? []}
-        key={shifted}
-        timeMarker={shifted === dayOfTheWeek ? currentTime : false}
+        times={room[day] ?? []}
+        key={day}
+        timeMarker={day === dayOfTheWeek ? currentTime : false}
       />
     )
   })
